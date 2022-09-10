@@ -2,18 +2,22 @@
 # Copyright (c) 2022 Lincoln D. Stein (https://github.com/lstein)
 
 import argparse
-import shlex
+import copy
 import os
 import re
+import shlex
 import sys
-import copy
-import warnings
 import time
+import warnings
+from pathlib import Path
+
+from omegaconf import OmegaConf
+
 import ldm.dream.readline
+from ldm.dream.image_util import make_grid
 from ldm.dream.pngwriter import PngWriter, PromptFormatter
 from ldm.dream.server import DreamServer, ThreadingDreamServer
-from ldm.dream.image_util import make_grid
-from omegaconf import OmegaConf
+
 
 def main():
     """Initialize command-line parsers and the diffusion model"""
@@ -39,12 +43,12 @@ def main():
 
     print('* Initializing, be patient...\n')
     sys.path.append('.')
-    from pytorch_lightning import logging
-    from ldm.simplet2i import T2I
-
     # these two lines prevent a horrible warning message from appearing
     # when the frozen CLIP tokenizer is imported
     import transformers
+    from pytorch_lightning import logging
+
+    from ldm.simplet2i import T2I
 
     transformers.logging.set_verbosity_error()
 
@@ -341,6 +345,9 @@ def write_log_message(results, log_path):
     """logs the name of the output image, prompt, and prompt args to the terminal and log file"""
     log_lines = [f'{path}: {prompt}\n' for path, prompt in results]
     print(*log_lines, sep='')
+    prompts_file = Path('prompts.txt')
+    with prompts_file.open('a') as f:
+        f.writelines(log_lines)
 
     with open(log_path, 'a', encoding='utf-8') as file:
         file.writelines(log_lines)
